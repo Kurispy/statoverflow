@@ -1,0 +1,7 @@
+Andrew Yi 994568179 - Animation
+Chris Chen 997549548 - Interactive
+Project 2 Milestone 1
+
+The animation is showing user's locations in random locations around the canvus. Holding down the mouse button will stop the animation.
+The interactive data represents a graph of dots that are plotted in a xy system where x is the user's reputation and y(positive going in the downward direction) is the number of views. 
+You also have the ability to interact with the graph by click and dragging as well as zooming in and out by the scroll button.
