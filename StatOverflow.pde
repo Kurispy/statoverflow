@@ -1,75 +1,90 @@
-Table userData;
-int windowWidth = 800, windowHeight = 800;
-float zoom;
-PVector offset;
-PVector poffset;
-PVector mouse;
-int x = 0;
-String location = "";
-boolean isAnim = true;
+import java.io.FileReader;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+
+CSVReader reader;
+int radius = 80;
+PVector mousePress = new PVector(0, 0);
+PVector rot = new PVector(0, 0, 0);
+PVector prot = new PVector(0, 0, 0);
+IntDict tagCount = new IntDict();
+SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
+Calendar calendar = new GregorianCalendar();
+Calendar pDate = new GregorianCalendar();
 
 void setup() {
-  size(windowWidth, windowHeight);
-  zoom = 1.0;
-  offset = new PVector(0, 0);
-  poffset = new PVector(0, 0);
-  
-  userData = loadTable("users.csv", "header");
-  
-  textFont(createFont("Georgia", 36));
-  fill(255, 100);
-  noStroke();
-  
+  try {
+    reader = new CSVReader(new FileReader(dataPath("posts.csv")));
+    reader.readNext();
+  }
+  catch (Exception e) {
+    System.out.println(e);
+    System.exit(1);
+  }
+  size(800, 800, P3D);
+  background(0);
+  textFont(createFont("Arial", 36));
+  sphereDetail(10);
 }
 
 void draw() {
-  if(isAnim) {
-    background(0);
-    pushMatrix();
+  try {
+    String [] nextLine;
+    String [] tags;
     
-    scale(zoom);
-    translate(offset.x / zoom, offset.y / zoom);
-    
-    int i = 0;
-    for (TableRow row : userData.rows()) {
-      if (i++ > 10000)
-        break;
-      ellipse(row.getInt("Reputation"), row.getInt("Views"), 1,1);
+    do {
+      nextLine = reader.readNext();
+    } while (nextLine == null || Integer.parseInt(nextLine[1]) != 1);
+    tags = splitTokens(nextLine[13], "<>");
+    for (String tag : tags) {
+      tagCount.increment(tag);
     }
     
-    popMatrix();
-  }
-  else {
-    fill(0, 20);
-    rect(0, 0, width, height);
-    if(!mousePressed)
-      animate();
-  }
-}
+    if(pDate.get(Calendar.DAY_OF_MONTH) != dateFormat.parse(nextLine[3]).getDate()) {
+      for(String tag : tagCount.keys()) {
+        tagCount.sub(tag, 1);
+        if(tagCount.get(tag) == 0)
+          tagCount.remove(tag);
+      }
+      pDate.setTime(dateFormat.parse(nextLine[3]));
+    }
+    
+    //calendar.setTime(dateFormat.parse(nextLine[3]));
+    
+    background(0);
+    lights();
+    
+    beginCamera();
+    camera();
+    translate(width / 2, height / 2, -1);
+    rotateX(rot.x);
+    rotateY(rot.y);
+    endCamera();
 
-void animate(){
-  fill(#d2d2d2);
-  do{
-    x = int(random(0, 600000));
-    location = userData.getString(x,7);
-  } while(location == null);
-  text(location, random(800), random(800));
-}
-
-void mouseWheel(MouseEvent event) {
-  zoom -= 0.1 * event.getAmount();
+    noFill();
+    stroke(255);
+    randomSeed(0);
+    for(String tag : tagCount.keys()) {
+      pushMatrix();
+      translate(random(-width, width), 0, random(-width, width));
+      sphere(tagCount.get(tag));
+      popMatrix();
+    }
+  }
+  catch (Exception e) {
+    System.out.println(e);
+    System.exit(1);
+  }
 }
 
 void mousePressed() {
-  mouse = new PVector(mouseX, mouseY);
-  poffset.set(offset);
+  mousePress = new PVector(mouseX, mouseY);
+  prot.set(rot);
 }
 
 void mouseDragged() {
-  offset.x = mouseX - mouse.x + poffset.x;
-  offset.y = mouseY - mouse.y + poffset.y;
-}
-
-void keyPressed() {
-  isAnim = !isAnim;
+  rot.y = (mouseX - mousePress.x) / width * PI + prot.y;
+  rot.x = constrain(-(mouseY - mousePress.y) / height * PI + prot.x, -HALF_PI, HALF_PI);
 }
