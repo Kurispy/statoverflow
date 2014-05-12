@@ -15,6 +15,8 @@ IntDict tagCount = new IntDict();
 SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
 Calendar calendar = new GregorianCalendar();
 Calendar pDate = new GregorianCalendar();
+ControlP5 cp5;
+FrameRate fps;
 
 void setup() {
   try {
@@ -26,9 +28,10 @@ void setup() {
     System.exit(1);
   }
   size(800, 800, P3D);
-  background(0);
-  textFont(createFont("Arial", 36));
-  sphereDetail(10);
+  
+  cp5 = new ControlP5(this);
+  cp5.setAutoDraw(false);
+  fps = cp5.addFrameRate();
 }
 
 void draw() {
@@ -36,14 +39,18 @@ void draw() {
     String [] nextLine;
     String [] tags;
     
+    // Get the next line of the CSV
     do {
       nextLine = reader.readNext();
     } while (nextLine == null || Integer.parseInt(nextLine[1]) != 1);
+    
+    // "Pump up" the spheres that got contributed to
     tags = splitTokens(nextLine[13], "<>");
     for (String tag : tags) {
       tagCount.increment(tag);
     }
     
+    // Remove any tags that haven't been used for a while
     if(pDate.get(Calendar.DAY_OF_MONTH) != dateFormat.parse(nextLine[3]).getDate()) {
       for(String tag : tagCount.keys()) {
         tagCount.sub(tag, 1);
@@ -53,37 +60,48 @@ void draw() {
       pDate.setTime(dateFormat.parse(nextLine[3]));
     }
     
-    background(0);
-    lights();
-    
-    beginCamera();
-    camera();
-    translate(width / 2, height / 2, -1);
-    rotateX(rot.x);
-    rotateY(rot.y);
-    
-    if(abs(targetZoom - zoom) > .001) {
+    // Zoom easing
+    if(abs(targetZoom - zoom) > .001)
       zoom += (targetZoom - zoom) * zoomEase;
-    }
     else
       zoom = targetZoom;
-    scale(zoom);
-    endCamera();
-
+    
+    // Draw pretty things
+    background(0);
+    lights();
     noFill();
     stroke(255);
     randomSeed(0);
     for(String tag : tagCount.keys()) {
       pushMatrix();
       translate(random(-width, width), 0, random(-width, width));
+      sphereDetail(constrain(tagCount.get(tag), 3, 10));
       sphere(tagCount.get(tag));
       popMatrix();
     }
+    
+    // Position the camera and draw the GUI
+    noLights();
+    beginCamera();
+    camera();
+    hint(DISABLE_DEPTH_TEST);
+    drawGUI();
+    hint(ENABLE_DEPTH_TEST);
+    translate(width / 2, height / 2, -1);
+    rotateX(rot.x);
+    rotateY(rot.y);
+    scale(zoom);
+    endCamera();
+    
   }
   catch (Exception e) {
     System.out.println(e);
     System.exit(1);
   }
+}
+
+void drawGUI() {
+  cp5.draw();
 }
 
 void mousePressed() {
