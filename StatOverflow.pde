@@ -5,7 +5,9 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 
 CSVReader reader;
-int radius = 80;
+float zoom = 1.0;
+float targetZoom = 1.0;
+float zoomEase = 0.2;
 PVector mousePress = new PVector(0, 0);
 PVector rot = new PVector(0, 0, 0);
 PVector prot = new PVector(0, 0, 0);
@@ -51,8 +53,6 @@ void draw() {
       pDate.setTime(dateFormat.parse(nextLine[3]));
     }
     
-    //calendar.setTime(dateFormat.parse(nextLine[3]));
-    
     background(0);
     lights();
     
@@ -61,6 +61,13 @@ void draw() {
     translate(width / 2, height / 2, -1);
     rotateX(rot.x);
     rotateY(rot.y);
+    
+    if(abs(targetZoom - zoom) > .001) {
+      zoom += (targetZoom - zoom) * zoomEase;
+    }
+    else
+      zoom = targetZoom;
+    scale(zoom);
     endCamera();
 
     noFill();
@@ -87,4 +94,11 @@ void mousePressed() {
 void mouseDragged() {
   rot.y = (mouseX - mousePress.x) / width * PI + prot.y;
   rot.x = constrain(-(mouseY - mousePress.y) / height * PI + prot.x, -HALF_PI, HALF_PI);
+}
+
+void mouseWheel(MouseEvent event) {
+  if(event.getAmount() < 0)
+    targetZoom /= .95;
+  else if(event.getAmount() > 0)
+    targetZoom *= .95;
 }
