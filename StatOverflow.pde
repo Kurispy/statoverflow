@@ -4,7 +4,10 @@ import java.util.Date;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
+Table users;
 CSVReader reader;
+int detailLevel = 10;
+int decay = 2;
 float zoom = 1.0;
 float targetZoom = 1.0;
 float zoomEase = 0.2;
@@ -19,6 +22,7 @@ ControlP5 cp5;
 FrameRate fps;
 
 void setup() {
+  size(800, 800, P3D);
   try {
     reader = new CSVReader(new FileReader(dataPath("posts.csv")));
     reader.readNext();
@@ -27,7 +31,9 @@ void setup() {
     System.out.println(e);
     System.exit(1);
   }
-  size(800, 800, P3D);
+  
+  users = loadTable("users.csv", "header");
+  
   
   cp5 = new ControlP5(this);
   cp5.setAutoDraw(false);
@@ -44,6 +50,9 @@ void draw() {
       nextLine = reader.readNext();
     } while (nextLine == null || Integer.parseInt(nextLine[1]) != 1);
     
+    // Who asked the question?
+    TableRow row = users.findRow(str(parseInt(nextLine[7])+1000000), "Id");
+    
     // "Pump up" the spheres that got contributed to
     tags = splitTokens(nextLine[13], "<>");
     for (String tag : tags) {
@@ -53,8 +62,8 @@ void draw() {
     // Remove any tags that haven't been used for a while
     if(pDate.get(Calendar.DAY_OF_MONTH) != dateFormat.parse(nextLine[3]).getDate()) {
       for(String tag : tagCount.keys()) {
-        tagCount.sub(tag, 1);
-        if(tagCount.get(tag) == 0)
+        tagCount.sub(tag, decay);
+        if(tagCount.get(tag) <= 0)
           tagCount.remove(tag);
       }
       pDate.setTime(dateFormat.parse(nextLine[3]));
@@ -68,20 +77,18 @@ void draw() {
     
     // Draw pretty things
     background(0);
-    lights();
     noFill();
     stroke(255);
     randomSeed(0);
     for(String tag : tagCount.keys()) {
       pushMatrix();
       translate(random(-width, width), 0, random(-width, width));
-      sphereDetail(constrain(tagCount.get(tag), 3, 10));
+      sphereDetail(constrain(tagCount.get(tag), 3, detailLevel));
       sphere(tagCount.get(tag));
       popMatrix();
     }
     
     // Position the camera and draw the GUI
-    noLights();
     beginCamera();
     camera();
     hint(DISABLE_DEPTH_TEST);
