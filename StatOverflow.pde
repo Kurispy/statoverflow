@@ -20,9 +20,12 @@ Calendar calendar = new GregorianCalendar();
 Calendar pDate = new GregorianCalendar();
 ControlP5 cp5;
 FrameRate fps;
+boolean cp5Click = false;
 
 void setup() {
-  size(800, 800, P3D);
+  size(displayWidth, displayHeight, P3D);
+  
+  // Data loading
   try {
     reader = new CSVReader(new FileReader(dataPath("posts.csv")));
     reader.readNext();
@@ -31,13 +34,50 @@ void setup() {
     System.out.println(e);
     System.exit(1);
   }
+  //users = loadTable("users.csv", "header");
   
-  users = loadTable("users.csv", "header");
-  
-  
+  // CP5 setup
   cp5 = new ControlP5(this);
   cp5.setAutoDraw(false);
   fps = cp5.addFrameRate();
+  fps.hide();
+  ControllerGroup rightMenu = cp5.addGroup("Settings")
+    .setPosition(width - 200, 10)
+    .setWidth(200)
+    .setBarHeight(10)
+    .setBackgroundHeight(height)
+    .setBackgroundColor(color(255,10))
+    ;
+  cp5.addSlider("detailLevel")
+    .setSize(20, 200)
+    .setRange(3, 30)
+    .setNumberOfTickMarks(28)
+    .showTickMarks(false)
+    .setCaptionLabel("Detail Level")
+    .setGroup(rightMenu)
+    ;
+  cp5.addSlider("decay")
+    .setSize(20, 200)
+    .setRange(0, 10)
+    .setNumberOfTickMarks(11)
+    .setGroup(rightMenu)
+    ;
+  cp5.addButton("Show FPS")
+    .setSize(20, 20)
+    .setPosition(10, 300)
+    .setGroup(rightMenu)
+    .setSwitch(true)
+    .getCaptionLabel()
+    .align(ControlP5.CENTER, ControlP5.BOTTOM_OUTSIDE)
+    .setPaddingX(0)
+    ;
+  
+  // This allows us to use the scroll wheel with CP5
+  addMouseWheelListener(new java.awt.event.MouseWheelListener() {
+    public void mouseWheelMoved(java.awt.event.MouseWheelEvent e) {
+      cp5.setMouseWheelRotation(e.getWheelRotation());
+    }
+  });
 }
 
 void draw() {
@@ -51,7 +91,7 @@ void draw() {
     } while (nextLine == null || Integer.parseInt(nextLine[1]) != 1);
     
     // Who asked the question?
-    TableRow row = users.findRow(str(parseInt(nextLine[7])+1000000), "Id");
+    //TableRow row = users.findRow(str(parseInt(nextLine[7])+1000000), "Id");
     
     // "Pump up" the spheres that got contributed to
     tags = splitTokens(nextLine[13], "<>");
@@ -82,7 +122,7 @@ void draw() {
     randomSeed(0);
     for(String tag : tagCount.keys()) {
       pushMatrix();
-      translate(random(-width, width), 0, random(-width, width));
+      translate(random(-width, width), 0, random(-height, height));
       sphereDetail(constrain(tagCount.get(tag), 3, detailLevel));
       sphere(tagCount.get(tag));
       popMatrix();
@@ -112,18 +152,39 @@ void drawGUI() {
 }
 
 void mousePressed() {
+  if(cp5.isMouseOver()) {
+    cp5Click = true;
+    return;
+  }
+  cp5Click = false;
+  
   mousePress = new PVector(mouseX, mouseY);
   prot.set(rot);
 }
 
 void mouseDragged() {
+  if(cp5.isMouseOver() && cp5Click == true)
+    return;
+  
   rot.y = (mouseX - mousePress.x) / width * PI + prot.y;
   rot.x = constrain(-(mouseY - mousePress.y) / height * PI + prot.x, -HALF_PI, HALF_PI);
 }
 
 void mouseWheel(MouseEvent event) {
+  if(cp5.isMouseOver())
+    return;
+  
   if(event.getAmount() < 0)
     targetZoom /= .95;
   else if(event.getAmount() > 0)
     targetZoom *= .95;
+}
+
+void controlEvent(ControlEvent theEvent) {
+  if(theEvent.getController() == cp5.getController("Show FPS")) {
+    if(!fps.isVisible())
+      fps.show();
+    else
+      fps.hide();
+  }
 }
