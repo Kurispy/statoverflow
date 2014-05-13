@@ -8,6 +8,7 @@ Table users;
 CSVReader reader;
 int detailLevel = 10;
 int decay = 2;
+int viewCountThreshold = 0;
 float zoom = 1.0;
 float targetZoom = 1.0;
 float zoomEase = 0.2;
@@ -47,6 +48,7 @@ void setup() {
     .setBarHeight(10)
     .setBackgroundHeight(height)
     .setBackgroundColor(color(255,10))
+    .close()
     ;
   cp5.addSlider("detailLevel")
     .setSize(20, 200)
@@ -69,7 +71,14 @@ void setup() {
     .setSwitch(true)
     .getCaptionLabel()
     .align(ControlP5.CENTER, ControlP5.BOTTOM_OUTSIDE)
-    .setPaddingX(0)
+    ;
+  cp5.addNumberbox("viewCountThreshold") // This should be converted to a range slider
+    .setPosition(100, 300)
+    .setSize(90, 20)
+    .setRange(0, Integer.MAX_VALUE)
+    .setGroup(rightMenu)
+    .setMultiplier(25)
+    .setCaptionLabel("View Count Threshold")
     ;
   
   // This allows us to use the scroll wheel with CP5
@@ -88,7 +97,7 @@ void draw() {
     // Get the next line of the CSV
     do {
       nextLine = reader.readNext();
-    } while (nextLine == null || Integer.parseInt(nextLine[1]) != 1);
+    } while (nextLine == null || Integer.parseInt(nextLine[1]) != 1 || Integer.parseInt(nextLine[5]) < viewCountThreshold);
     
     // Who asked the question?
     //TableRow row = users.findRow(str(parseInt(nextLine[7])+1000000), "Id");
