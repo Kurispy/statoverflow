@@ -7,18 +7,19 @@ public class User{
   
   // Sphere properties
   color col;
-  float radius;
-  float theta = 0;
-  float thetaSpeed = 0;
+  float rho;
+  float phi = 0;
+  float h = 0;
+  float phiSpeed = 0;
   
   public User (int userId, int userReputation, int userUpVotes, int userDownVotes) {
     id = userId;
     reputation = userReputation;
     upVotes = userUpVotes;
     downVotes = userDownVotes;
-    radius = upVotes;
-    theta = random(2*PI);
-    thetaSpeed = (2*PI)/userReputation;
+    rho = upVotes;
+    phi = random(2*PI);
+    phiSpeed = (2*PI)/userReputation;
   }
   
   public int getId() {
@@ -46,15 +47,16 @@ public class User{
   } 
   
   void update() {
-    theta += thetaSpeed;
+    phi += phiSpeed;
   }
   
   void render() {
-    float x = sin(theta) * radius * 2;
-    float y = cos(theta) * radius * 2;
+    float x = sin(phi) * rho * 2;
+    float y = h;
+    float z = cos(phi) * rho * 2;
     pushMatrix();
-    translate(x,y,0);
-    rotateZ(-rot.z);
+    translate(x,y,z);
+    rotateY(-rot.y);
     rotateX(-rot.x);
     fill(col);
     noStroke();

@@ -45,15 +45,6 @@ void setup() {
   // CP5 setup
   cp5 = new ControlP5(this);
   cp5.setAutoDraw(false);
-  userInfo = cp5.addTextarea("txt")
-                    .setPosition(100,100)
-                    .setSize(120,60)
-                    .hideScrollbar()
-                    .setFont(createFont("arial",12))
-                    .setLineHeight(14)
-                    .setColor(color(128))
-                    .setColorBackground(color(255,100))
-                    .setColorForeground(color(255,100));
   fps = cp5.addFrameRate();
   fps.hide();
   ControllerGroup rightMenu = cp5.addGroup("Settings")
@@ -93,6 +84,16 @@ void setup() {
     .setGroup(rightMenu)
     .setMultiplier(25)
     .setCaptionLabel("View Count Threshold")
+    ;
+  userInfo = cp5.addTextarea("txt")
+    .setPosition(100,100)
+    .setSize(120,60)
+    .hideScrollbar()
+    .setFont(createFont("arial",12))
+    .setLineHeight(14)
+    .setColor(color(128))
+    .setColorBackground(color(255,100))
+    .setColorForeground(color(255,100))
     ;
   
   // This allows us to use the scroll wheel with CP5
@@ -144,9 +145,11 @@ void draw() {
       zoom = targetZoom;
     
     // Draw pretty things
-    background(10);
+    background(0);
     
     // Draw rings
+    pushMatrix();
+    rotateX(HALF_PI);
     strokeWeight(2);
     noFill();
     
@@ -155,7 +158,6 @@ void draw() {
     ellipse(0,0,200,200);
     
     // Ring 2
-    stroke(255, 10);
     ellipse(0,0,400,400);
     
     // Ring 3
@@ -163,18 +165,13 @@ void draw() {
     
     // Ring 4
     ellipse(0,0,1500,1500);
-    
-    // Y axis
-    stroke(255, 100);
-    pushMatrix();
-    rotateY(-PI/2);
-    line(0,0,500,0);
     popMatrix();
     
+    
+    // Draw tags
     noFill();
     stroke(255);
     randomSeed(0);
-    
     for(String tag : tagCount.keys()) {
       pushMatrix();
       translate(random(-width, width), 0, random(-height, height));
@@ -183,6 +180,7 @@ void draw() {
       popMatrix();
     }
     
+    // Draw users
     for(User user: map.values())
     {
       user.update();
