@@ -3,6 +3,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
+import java.util.Map;
 
 Table users;
 CSVReader reader;
@@ -19,7 +20,11 @@ SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
 Calendar calendar = new GregorianCalendar();
 Calendar pDate = new GregorianCalendar();
 ControlP5 cp5;
+Textarea userInfo;
 FrameRate fps;
+HashMap<Integer, User> map = new HashMap<Integer, User>();
+int maxUpVotes = 0;
+int minUpVotes = 0;
 
 void setup() {
   size(800, 800, P3D);
@@ -34,9 +39,17 @@ void setup() {
   
   users = loadTable("users.csv", "header");
   
-  
   cp5 = new ControlP5(this);
   cp5.setAutoDraw(false);
+  userInfo = cp5.addTextarea("txt")
+                    .setPosition(100,100)
+                    .setSize(120,60)
+                    .hideScrollbar()
+                    .setFont(createFont("arial",12))
+                    .setLineHeight(14)
+                    .setColor(color(128))
+                    .setColorBackground(color(255,100))
+                    .setColorForeground(color(255,100));
   fps = cp5.addFrameRate();
 }
 
@@ -52,6 +65,11 @@ void draw() {
     
     // Who asked the question?
     TableRow row = users.findRow(str(parseInt(nextLine[7])+1000000), "Id");
+    if(row != null) {
+      map.put(row.getInt("Id"), new User(row.getInt("Id"), row.getInt("Reputation"), row.getInt("UpVotes"),  row.getInt("DownVotes")));
+    }
+    
+    updateColors();
     
     // "Pump up" the spheres that got contributed to
     tags = splitTokens(nextLine[13], "<>");
@@ -76,16 +94,48 @@ void draw() {
       zoom = targetZoom;
     
     // Draw pretty things
-    background(0);
+    background(10);
+    
+    // Draw rings
+    strokeWeight(2);
+    noFill();
+    
+    // Ring 1
+    stroke(255, 10);
+    ellipse(0,0,200,200);
+    
+    // Ring 2
+    stroke(255, 10);
+    ellipse(0,0,400,400);
+    
+    // Ring 3
+    ellipse(0,0,900,900);
+    
+    // Ring 4
+    ellipse(0,0,1500,1500);
+    
+    // Y axis
+    stroke(255, 100);
+    pushMatrix();
+    rotateY(-PI/2);
+    line(0,0,500,0);
+    popMatrix();
+    
     noFill();
     stroke(255);
     randomSeed(0);
-    for(String tag : tagCount.keys()) {
-      pushMatrix();
-      translate(random(-width, width), 0, random(-width, width));
-      sphereDetail(constrain(tagCount.get(tag), 3, detailLevel));
-      sphere(tagCount.get(tag));
-      popMatrix();
+//    for(String tag : tagCount.keys()) {
+//      pushMatrix();
+//      translate(random(-width, width), random(-width, width), -400);
+//      sphereDetail(constrain(tagCount.get(tag), 3, detailLevel));
+//      sphere(tagCount.get(tag));
+//      popMatrix();
+//    }
+//    
+    for(User user: map.values())
+    {
+      user.update();
+      user.render();
     }
     
     // Position the camera and draw the GUI
@@ -107,6 +157,26 @@ void draw() {
   }
 }
 
+void updateColors() {
+  // Find the max and min of upvotes
+  for(User user: map.values()) {
+    maxUpVotes = max(user.getUpVotes(), maxUpVotes);
+    minUpVotes = min(user.getUpVotes(), minUpVotes);
+  }
+  
+  // Change color based on mapping of upvotes
+  colorMode(HSB);
+  for(User user: map.values()) {
+    if(user.getUpVotes() > 0) {
+      float c = map(sqrt(user.getUpVotes()), sqrt(minUpVotes), sqrt(maxUpVotes), 250, 0);
+      user.setColor(color(c, 255, 255));
+    } else {
+      user.setColor(color(200, 255, 255));
+    }
+  }
+  colorMode(RGB);
+}
+
 void drawGUI() {
   cp5.draw();
 }
@@ -114,6 +184,17 @@ void drawGUI() {
 void mousePressed() {
   mousePress = new PVector(mouseX, mouseY);
   prot.set(rot);
+  
+  // Show user information if selected on
+  color c = get(mouseX, mouseY);
+  for(User user: map.values()) {
+    if(user.getColor() == c) {
+      userInfo.setText("User Id: " + user.getId() + "\n" +
+                       "Upvotes: " + user.getUpVotes() + "\n" +
+                       "Downvotes: " + user.getDownVotes() + "\n" +
+                       "Reputation: " + user.getReputation());
+    }
+  }
 }
 
 void mouseDragged() {
