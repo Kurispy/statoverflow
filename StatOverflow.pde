@@ -1,75 +1,282 @@
-Table userData;
-int windowWidth = 800, windowHeight = 800;
-float zoom;
-PVector offset;
-PVector poffset;
-PVector mouse;
-int x = 0;
-String location = "";
-boolean isAnim = true;
+import java.io.FileReader;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+import java.util.Map;
+
+Table users;
+CSVReader reader;
+int detailLevel = 10;
+int decay = 2;
+int viewCountThreshold = 0;
+float zoom = 1.0;
+float targetZoom = 1.0;
+float zoomEase = 0.2;
+PVector mousePress = new PVector(0, 0);
+PVector rot = new PVector(0, 0, 0);
+PVector prot = new PVector(0, 0, 0);
+IntDict tagCount = new IntDict();
+SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
+Calendar calendar = new GregorianCalendar();
+Calendar pDate = new GregorianCalendar();
+ControlP5 cp5;
+Textarea userInfo;
+FrameRate fps;
+boolean cp5Click = false;
+HashMap<Integer, User> map = new HashMap<Integer, User>();
+int maxUpVotes = 0;
+int minUpVotes = 0;
 
 void setup() {
-  size(windowWidth, windowHeight);
-  zoom = 1.0;
-  offset = new PVector(0, 0);
-  poffset = new PVector(0, 0);
+  size(displayWidth, displayHeight, P3D);
   
-  userData = loadTable("users.csv", "header");
+  // Data loading
+  try {
+    reader = new CSVReader(new FileReader(dataPath("posts.csv")));
+    reader.readNext();
+  }
+  catch (Exception e) {
+    System.out.println(e);
+    System.exit(1);
+  }
+  users = loadTable("users.csv", "header");
   
-  textFont(createFont("Georgia", 36));
-  fill(255, 100);
-  noStroke();
+  // CP5 setup
+  cp5 = new ControlP5(this);
+  cp5.setAutoDraw(false);
+  userInfo = cp5.addTextarea("txt")
+                    .setPosition(100,100)
+                    .setSize(120,60)
+                    .hideScrollbar()
+                    .setFont(createFont("arial",12))
+                    .setLineHeight(14)
+                    .setColor(color(128))
+                    .setColorBackground(color(255,100))
+                    .setColorForeground(color(255,100));
+  fps = cp5.addFrameRate();
+  fps.hide();
+  ControllerGroup rightMenu = cp5.addGroup("Settings")
+    .setPosition(width - 200, 10)
+    .setWidth(200)
+    .setBarHeight(10)
+    .setBackgroundHeight(height)
+    .setBackgroundColor(color(255,10))
+    .close()
+    ;
+  cp5.addSlider("detailLevel")
+    .setSize(20, 200)
+    .setRange(3, 30)
+    .setNumberOfTickMarks(28)
+    .showTickMarks(false)
+    .setCaptionLabel("Detail Level")
+    .setGroup(rightMenu)
+    ;
+  cp5.addSlider("decay")
+    .setSize(20, 200)
+    .setRange(0, 10)
+    .setNumberOfTickMarks(11)
+    .setGroup(rightMenu)
+    ;
+  cp5.addButton("Show FPS")
+    .setSize(20, 20)
+    .setPosition(10, 300)
+    .setGroup(rightMenu)
+    .setSwitch(true)
+    .getCaptionLabel()
+    .align(ControlP5.CENTER, ControlP5.BOTTOM_OUTSIDE)
+    ;
+  cp5.addNumberbox("viewCountThreshold") // This should be converted to a range slider
+    .setPosition(100, 300)
+    .setSize(90, 20)
+    .setRange(0, Integer.MAX_VALUE)
+    .setGroup(rightMenu)
+    .setMultiplier(25)
+    .setCaptionLabel("View Count Threshold")
+    ;
   
+  // This allows us to use the scroll wheel with CP5
+  addMouseWheelListener(new java.awt.event.MouseWheelListener() {
+    public void mouseWheelMoved(java.awt.event.MouseWheelEvent e) {
+      cp5.setMouseWheelRotation(e.getWheelRotation());
+    }
+  });
 }
 
 void draw() {
-  if(isAnim) {
-    background(0);
-    pushMatrix();
+  try {
+    String [] nextLine;
+    String [] tags;
     
-    scale(zoom);
-    translate(offset.x / zoom, offset.y / zoom);
+    // Get the next line of the CSV
+    do {
+      nextLine = reader.readNext();
+    } while (nextLine == null || Integer.parseInt(nextLine[1]) != 1 || Integer.parseInt(nextLine[5]) < viewCountThreshold);
     
-    int i = 0;
-    for (TableRow row : userData.rows()) {
-      if (i++ > 10000)
-        break;
-      ellipse(row.getInt("Reputation"), row.getInt("Views"), 1,1);
+    // Who asked the question?
+    TableRow row = users.findRow(str(parseInt(nextLine[7])+1000000), "Id");
+    if(row != null) {
+      map.put(row.getInt("Id"), new User(row.getInt("Id"), row.getInt("Reputation"), row.getInt("UpVotes"),  row.getInt("DownVotes")));
     }
     
+    updateColors();
+    
+    // "Pump up" the spheres that got contributed to
+    tags = splitTokens(nextLine[13], "<>");
+    for (String tag : tags) {
+      tagCount.increment(tag);
+    }
+    
+    // Remove any tags that haven't been used for a while
+    if(pDate.get(Calendar.DAY_OF_MONTH) != dateFormat.parse(nextLine[3]).getDate()) {
+      for(String tag : tagCount.keys()) {
+        tagCount.sub(tag, decay);
+        if(tagCount.get(tag) <= 0)
+          tagCount.remove(tag);
+      }
+      pDate.setTime(dateFormat.parse(nextLine[3]));
+    }
+    
+    // Zoom easing
+    if(abs(targetZoom - zoom) > .001)
+      zoom += (targetZoom - zoom) * zoomEase;
+    else
+      zoom = targetZoom;
+    
+    // Draw pretty things
+    background(10);
+    
+    // Draw rings
+    strokeWeight(2);
+    noFill();
+    
+    // Ring 1
+    stroke(255, 10);
+    ellipse(0,0,200,200);
+    
+    // Ring 2
+    stroke(255, 10);
+    ellipse(0,0,400,400);
+    
+    // Ring 3
+    ellipse(0,0,900,900);
+    
+    // Ring 4
+    ellipse(0,0,1500,1500);
+    
+    // Y axis
+    stroke(255, 100);
+    pushMatrix();
+    rotateY(-PI/2);
+    line(0,0,500,0);
     popMatrix();
+    
+    noFill();
+    stroke(255);
+    randomSeed(0);
+    
+    for(String tag : tagCount.keys()) {
+      pushMatrix();
+      translate(random(-width, width), 0, random(-height, height));
+      sphereDetail(constrain(tagCount.get(tag), 3, detailLevel));
+      sphere(tagCount.get(tag));
+      popMatrix();
+    }
+    
+    for(User user: map.values())
+    {
+      user.update();
+      user.render();
+    }
+    
+    // Position the camera and draw the GUI
+    beginCamera();
+    camera();
+    hint(DISABLE_DEPTH_TEST);
+    drawGUI();
+    hint(ENABLE_DEPTH_TEST);
+    translate(width / 2, height / 2, -1);
+    rotateX(rot.x);
+    rotateY(rot.y);
+    scale(zoom);
+    endCamera();
+    
   }
-  else {
-    fill(0, 20);
-    rect(0, 0, width, height);
-    if(!mousePressed)
-      animate();
+  catch (Exception e) {
+    System.out.println(e);
+    System.exit(1);
   }
 }
 
-void animate(){
-  fill(#d2d2d2);
-  do{
-    x = int(random(0, 600000));
-    location = userData.getString(x,7);
-  } while(location == null);
-  text(location, random(800), random(800));
+void updateColors() {
+  // Find the max and min of upvotes
+  for(User user: map.values()) {
+    maxUpVotes = max(user.getUpVotes(), maxUpVotes);
+    minUpVotes = min(user.getUpVotes(), minUpVotes);
+  }
+  
+  // Change color based on mapping of upvotes
+  colorMode(HSB);
+  for(User user: map.values()) {
+    if(user.getUpVotes() > 0) {
+      float c = map(sqrt(user.getUpVotes()), sqrt(minUpVotes), sqrt(maxUpVotes), 250, 0);
+      user.setColor(color(c, 255, 255));
+    } else {
+      user.setColor(color(200, 255, 255));
+    }
+  }
+  colorMode(RGB);
 }
 
-void mouseWheel(MouseEvent event) {
-  zoom -= 0.1 * event.getAmount();
+void drawGUI() {
+  cp5.draw();
 }
 
 void mousePressed() {
-  mouse = new PVector(mouseX, mouseY);
-  poffset.set(offset);
+  if(cp5.isMouseOver()) {
+    cp5Click = true;
+    return;
+  }
+  cp5Click = false;
+  
+  mousePress = new PVector(mouseX, mouseY);
+  prot.set(rot);
+  
+  // Show user information if selected on
+  color c = get(mouseX, mouseY);
+  for(User user: map.values()) {
+    if(user.getColor() == c) {
+      userInfo.setText("User Id: " + user.getId() + "\n" +
+                       "Upvotes: " + user.getUpVotes() + "\n" +
+                       "Downvotes: " + user.getDownVotes() + "\n" +
+                       "Reputation: " + user.getReputation());
+    }
+  }
 }
 
 void mouseDragged() {
-  offset.x = mouseX - mouse.x + poffset.x;
-  offset.y = mouseY - mouse.y + poffset.y;
+  if(cp5.isMouseOver() && cp5Click == true)
+    return;
+  
+  rot.y = (mouseX - mousePress.x) / width * PI + prot.y;
+  rot.x = constrain(-(mouseY - mousePress.y) / height * PI + prot.x, -HALF_PI, HALF_PI);
 }
 
-void keyPressed() {
-  isAnim = !isAnim;
+void mouseWheel(MouseEvent event) {
+  if(cp5.isMouseOver())
+    return;
+  
+  if(event.getAmount() < 0)
+    targetZoom /= .95;
+  else if(event.getAmount() > 0)
+    targetZoom *= .95;
+}
+
+void controlEvent(ControlEvent theEvent) {
+  if(theEvent.getController() == cp5.getController("Show FPS")) {
+    if(!fps.isVisible())
+      fps.show();
+    else
+      fps.hide();
+  }
 }
