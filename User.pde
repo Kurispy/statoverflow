@@ -18,8 +18,8 @@ public class User{
     upVotes = userUpVotes;
     downVotes = userDownVotes;
     rho = upVotes;
-    phi = random(2*PI);
-    phiSpeed = (2*PI)/userReputation;
+    phi = random(TWO_PI);
+    phiSpeed = (TWO_PI)/userReputation;
   }
   
   public int getId() {
@@ -56,8 +56,7 @@ public class User{
     float z = cos(phi) * rho * 2;
     pushMatrix();
     translate(x,y,z);
-    rotateY(-rot.y);
-    rotateX(-rot.x);
+    camera.rotateToCamera();
     fill(col);
     noStroke();
     ellipse(0,0,sqrt(reputation),sqrt(reputation));
