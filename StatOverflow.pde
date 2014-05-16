@@ -1,12 +1,12 @@
 import java.io.FileReader;
 import java.util.Map;
 
-Table users;
+Table userData;
 CSVReader reader;
 int detailLevel = 10;
 int decay = 2;
 int viewCountThreshold = 0;
-HashMap<Integer, User> map = new HashMap<Integer, User>();
+HashMap<Integer, User> userSpheres = new HashMap<Integer, User>();
 int maxUpVotes = 0;
 int minUpVotes = 0;
 String [] nextLine;
@@ -36,7 +36,7 @@ void setup() {
   catch (Exception e) {
     System.err.println(e);
   }
-  users = loadTable("users.csv", "header");
+  userData = loadTable("users.csv", "header");
 }
 
 void draw() {
@@ -78,9 +78,9 @@ void draw() {
 //      }
 
       // Who asked the question?
-      TableRow row = users.findRow(str(parseInt(nextLine[7])+1000000), "Id");
+      TableRow row = userData.findRow(str(parseInt(nextLine[7])+1000000), "Id");
       if (row != null) {
-        map.put(row.getInt("Id"), new User(row.getInt("Id"), row.getInt("Reputation"), row.getInt("UpVotes"), row.getInt("DownVotes")));
+        userSpheres.put(row.getInt("Id"), new User(row.getInt("Id"), row.getInt("Reputation"), row.getInt("UpVotes"), row.getInt("DownVotes")));
       }
     }
     
@@ -126,7 +126,7 @@ void draw() {
     // Draw users
     pushMatrix();
     translate(0, -300, 0);
-    for (User user: map.values())
+    for (User user: userSpheres.values())
     {
       user.update();
       user.render();
@@ -144,14 +144,14 @@ void draw() {
 
 void updateColors() {
   // Find the max and min of upvotes
-  for (User user: map.values()) {
+  for (User user: userSpheres.values()) {
     maxUpVotes = max(user.getUpVotes(), maxUpVotes);
     minUpVotes = min(user.getUpVotes(), minUpVotes);
   }
 
   // Change color based on mapping of upvotes
   colorMode(HSB);
-  for (User user: map.values()) {
+  for (User user: userSpheres.values()) {
     if (user.getUpVotes() > 0) {
       float c = map(sqrt(user.getUpVotes()), sqrt(minUpVotes), sqrt(maxUpVotes), 250, 0);
       user.setColor(color(c, 255, 255));
@@ -168,7 +168,7 @@ void mousePressed() {
   
   // Show user information if selected on
   color c = get(mouseX, mouseY);
-  for (User user: map.values()) {
+  for (User user: userSpheres.values()) {
     if (user.getColor() == c) {
       gui.setUserInfo("User Id: " + user.getId() + "\n" +
         "Upvotes: " + user.getUpVotes() + "\n" +

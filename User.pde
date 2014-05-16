@@ -1,16 +1,9 @@
-public class User{
+public class User extends Sphere {
   // Class properties
   int id;
   int reputation;
   int upVotes;
   int downVotes;
-  
-  // Sphere properties
-  color col;
-  float rho;
-  float phi = 0;
-  float h = 0;
-  float phiSpeed = 0;
   
   public User (int userId, int userReputation, int userUpVotes, int userDownVotes) {
     id = userId;
