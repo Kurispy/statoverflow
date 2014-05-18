@@ -19,6 +19,10 @@ public class Timekeeper {
     cSimDate.setTimeInMillis(cSimDate.getTimeInMillis() + 1000 * simSecondsPerFrame);
   }
   
+  public Date getPostTime() {
+    return postDate.getTime();
+  }
+  
   public Date getSimulationTime() {
     return cSimDate.getTime();
   }

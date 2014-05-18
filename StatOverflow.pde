@@ -1,4 +1,5 @@
 import java.io.FileReader;
+import java.io.RandomAccessFile;
 import java.util.Map;
 
 Table userData;
@@ -11,6 +12,7 @@ int maxUpVotes = 0;
 int minUpVotes = 0;
 String [] nextLine;
 IntDict tagCount = new IntDict();
+RandomAccessFile raFile;
 
 Timekeeper timekeeper;
 Camera camera;
@@ -25,12 +27,12 @@ void setup() {
   
   // Data loading
   try {
-    reader = new CSVReader(new FileReader(dataPath("posts.csv")));
+    reader = new CSVReader(new FileReader(dataPath("posts.csv")), CSVParser.DEFAULT_SEPARATOR, CSVParser.DEFAULT_QUOTE_CHARACTER, '\0');
     reader.readNext(); // Get rid of header
     nextLine = reader.readNext();
     timekeeper.setCurrentPostTime(nextLine[3]);
     reader.close();
-    reader = new CSVReader(new FileReader(dataPath("posts.csv")));
+    reader = new CSVReader(new FileReader(dataPath("posts.csv")), CSVParser.DEFAULT_SEPARATOR, CSVParser.DEFAULT_QUOTE_CHARACTER, '\0');
     reader.readNext(); // Get rid of header
   }
   catch (Exception e) {
@@ -58,15 +60,12 @@ void draw() {
         continue;
       }
 
-      nextLine = reader.readNext();
-      timekeeper.setCurrentPostTime(nextLine[3]);
-
       // "Pump up" the spheres that got contributed to
       tags = splitTokens(nextLine[13], "<>");
       for (String tag : tags) {
         tagCount.increment(tag);
       }
-
+      
       // Remove any tags that haven't been used for a while
 //      if (pDate.get(Calendar.DAY_OF_MONTH) != cSimDate.get(Calendar.DAY_OF_MONTH)) {
 //        for (String tag : tagCount.keys()) {
@@ -82,6 +81,9 @@ void draw() {
       if (row != null) {
         userSpheres.put(row.getInt("Id"), new User(row.getInt("Id"), row.getInt("Reputation"), row.getInt("UpVotes"), row.getInt("DownVotes")));
       }
+      
+      nextLine = reader.readNext();
+      timekeeper.setCurrentPostTime(nextLine[3]);
     }
     
     updateColors();
