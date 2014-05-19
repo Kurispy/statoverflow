@@ -13,7 +13,7 @@ public class User extends Sphere {
     rho = upVotes;
     phi = random(TWO_PI);
     vPhi = (TWO_PI)/userReputation;
-    radius = sqrt(reputation) / 2;
+    tradius = sqrt(reputation) / 2;
   }
   
   public int getId() {

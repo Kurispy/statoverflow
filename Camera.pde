@@ -23,6 +23,10 @@ public class Camera {
     endCamera();
   }
   
+  public float getZoom() {
+    return zoom;
+  }
+  
   
   void mouseDragged() {
     if (gui.isMouseOver() && cp5Click == true)

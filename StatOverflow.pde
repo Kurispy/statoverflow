@@ -18,7 +18,7 @@ GUI gui;
 void setup() {
   size(displayWidth, displayHeight, P3D);
   
-  timekeeper = new Timekeeper();
+  
   camera = new Camera();
   gui = new GUI(this);
   
@@ -27,8 +27,10 @@ void setup() {
     reader = new CSVReader(new FileReader(dataPath("posts.csv")), CSVParser.DEFAULT_SEPARATOR, CSVParser.DEFAULT_QUOTE_CHARACTER, '\0');
     reader.readNext(); // Get rid of header
     nextLine = reader.readNext();
+    timekeeper = new Timekeeper(nextLine[3]);
     timekeeper.setCurrentPostTime(nextLine[3]);
     reader.close();
+    
     reader = new CSVReader(new FileReader(dataPath("posts.csv")), CSVParser.DEFAULT_SEPARATOR, CSVParser.DEFAULT_QUOTE_CHARACTER, '\0');
     reader.readNext(); // Get rid of header
   }
@@ -95,28 +97,21 @@ void draw() {
     // Draw rings
     pushMatrix();
     rotateX(HALF_PI);
-    strokeWeight(2);
     noFill();
-
-    // Ring 1
     stroke(127);
-    ellipse(0, 0, 200, 200);
-
-    // Ring 2
-    ellipse(0, 0, 400, 400);
-
-    // Ring 3
-    ellipse(0, 0, 900, 900);
-
-    // Ring 4
-    ellipse(0, 0, 1500, 1500);
+    for(int i = 1; i <= 4; i++) {
+      strokeWeight(1 / camera.getZoom());
+      ellipse(0, 0, pow(10, i), pow(10, i));
+    }
     popMatrix();
 
 
     // Draw tags
+    maxFrequency = 0;
     for (Tag tag: tagSpheres.values()) {
       tag.update();
       tag.render();
+      
     }
 
     // Draw users

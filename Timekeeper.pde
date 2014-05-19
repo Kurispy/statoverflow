@@ -8,15 +8,26 @@ public class Timekeeper {
   Calendar cSimDate = new GregorianCalendar();
   Calendar postDate = new GregorianCalendar();
   Calendar pDate = new GregorianCalendar();
+  Calendar startTime = new GregorianCalendar();
   String cDate;
-  long simSecondsPerFrame = 60; // simulated seconds per frame
+  long simSecondsPerFrame = 1000; // simulated seconds per frame
   
-  Timekeeper() {
-    cSimDate.set(2008, 6, 31);
+  Timekeeper(String startDate) {
+    try {
+      startTime.setTime(dateFormat.parse(startDate));
+      cSimDate.setTime(dateFormat.parse(startDate));
+    }
+    catch (java.text.ParseException e) {
+      System.err.println(e);
+    }
   }
   
   public void advance() {
     cSimDate.setTimeInMillis(cSimDate.getTimeInMillis() + 1000 * simSecondsPerFrame);
+  }
+  
+  public long getMillisPerFrame() {
+    return 1000 * simSecondsPerFrame;
   }
   
   public Date getPostTime() {
@@ -27,8 +38,12 @@ public class Timekeeper {
     return cSimDate.getTime();
   }
   
+  public long getTimeSinceStart() {
+    return cSimDate.getTimeInMillis() - startTime.getTimeInMillis();
+  }
+  
   public boolean hasAdvanced() {
-    return postDate.getTimeInMillis () > cSimDate.getTimeInMillis();
+    return postDate.after(cSimDate);
   }
   
   public void setCurrentPostTime(String date) {
