@@ -1,6 +1,4 @@
 import java.io.FileReader;
-import java.io.RandomAccessFile;
-import java.util.Map;
 
 Table userData;
 CSVReader reader;
@@ -8,11 +6,10 @@ int detailLevel = 10;
 int decay = 2;
 int viewCountThreshold = 0;
 HashMap<Integer, User> userSpheres = new HashMap<Integer, User>();
+HashMap<String, Tag> tagSpheres = new HashMap<String, Tag>();
 int maxUpVotes = 0;
 int minUpVotes = 0;
 String [] nextLine;
-IntDict tagCount = new IntDict();
-RandomAccessFile raFile;
 
 Timekeeper timekeeper;
 Camera camera;
@@ -63,7 +60,11 @@ void draw() {
       // "Pump up" the spheres that got contributed to
       tags = splitTokens(nextLine[13], "<>");
       for (String tag : tags) {
-        tagCount.increment(tag);
+        Tag tagSphere = tagSpheres.get(tag);
+        if(tagSphere == null)
+          tagSpheres.put(tag, new Tag(tag, 1));
+        else
+          tagSphere.increment();
       }
       
       // Remove any tags that haven't been used for a while
@@ -93,13 +94,12 @@ void draw() {
 
     // Draw rings
     pushMatrix();
-    translate(0, -300, 0);
     rotateX(HALF_PI);
     strokeWeight(2);
     noFill();
 
     // Ring 1
-    stroke(255, 10);
+    stroke(127);
     ellipse(0, 0, 200, 200);
 
     // Ring 2
@@ -114,15 +114,9 @@ void draw() {
 
 
     // Draw tags
-    noFill();
-    stroke(255);
-    randomSeed(0);
-    for (String tag : tagCount.keys()) {
-      pushMatrix();
-      translate(random(-width, width), 0, random(-height, height));
-      sphereDetail(constrain(tagCount.get(tag), 3, detailLevel));
-      sphere(tagCount.get(tag));
-      popMatrix();
+    for (Tag tag: tagSpheres.values()) {
+      tag.update();
+      tag.render();
     }
 
     // Draw users

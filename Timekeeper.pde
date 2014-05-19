@@ -9,7 +9,7 @@ public class Timekeeper {
   Calendar postDate = new GregorianCalendar();
   Calendar pDate = new GregorianCalendar();
   String cDate;
-  long simSecondsPerFrame = 3600; // simulated seconds per frame
+  long simSecondsPerFrame = 60; // simulated seconds per frame
   
   Timekeeper() {
     cSimDate.set(2008, 6, 31);

@@ -12,7 +12,8 @@ public class User extends Sphere {
     downVotes = userDownVotes;
     rho = upVotes;
     phi = random(TWO_PI);
-    phiSpeed = (TWO_PI)/userReputation;
+    vPhi = (TWO_PI)/userReputation;
+    radius = sqrt(reputation) / 2;
   }
   
   public int getId() {
@@ -37,23 +38,5 @@ public class User extends Sphere {
   
   public void setColor(color c) {
    col = c;
-  } 
-  
-  void update() {
-    phi += phiSpeed;
   }
-  
-  void render() {
-    float x = sin(phi) * rho * 2;
-    float y = h;
-    float z = cos(phi) * rho * 2;
-    pushMatrix();
-    translate(x,y,z);
-    camera.rotateToCamera();
-    fill(col);
-    noStroke();
-    ellipse(0,0,sqrt(reputation),sqrt(reputation));
-    popMatrix();   
-  }
-  
 }

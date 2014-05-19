@@ -57,7 +57,7 @@ public class GUI implements ControlListener {
       .setPosition(100, 100)
       .setSize(120, 60)
       .hideScrollbar()
-      .setFont(createFont("arial", 12))
+      .setFont(createFont("Arial", 12))
       .setLineHeight(14)
       .setColor(color(128))
       .setColorBackground(color(255, 100))
@@ -65,6 +65,7 @@ public class GUI implements ControlListener {
       ;
       
     currentDate = cp5.addTextlabel("cDate");
+    currentDate.setPosition(0, height - currentDate.getHeight());
   
     // This allows us to use the scroll wheel with CP5
     addMouseWheelListener(new java.awt.event.MouseWheelListener() {
