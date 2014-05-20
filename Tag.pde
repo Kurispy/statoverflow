@@ -1,13 +1,10 @@
 final long DAY_IN_MILLIS = 1000 * 60 * 60 * 24;
-float maxFrequency;
-float tagDecay = 1.0;
 
 public class Tag extends Sphere {
   String name;
   int count;
   int countPerFrame;
   float frequency; // Times used per unit of simulation time
-  
   
   Tag(String name, int count) {
     this.name = name;
@@ -27,21 +24,33 @@ public class Tag extends Sphere {
   }
   
   public void update() {
-    tradius = max(tradius + ((countPerFrame > 1 ? log(countPerFrame) : 0) - (0.001 * tagDecay) * timekeeper.getTimescale()), 0);
+    tradius = max(tradius + ((countPerFrame > 1 ? log(countPerFrame) : 0) - 0.001), 0); // should figure out a better scale for this
     trho = count;
     
     frequency = ((float) count) / ((float) frameCount);
-    if(frequency > maxFrequency)
-      maxFrequency = frequency;
+    if(frequency > maxTagFrequency)
+      maxTagFrequency = frequency;
     tvPhi = 0.05 * sqrt(frequency);
-    col = lerpColor(#818185, #FE7A15, map(frequency, 0, maxFrequency, 0, 1));
+    col = lerpColor(#818185, #FE7A15, map(frequency, 0, maxTagFrequency, 0, 1));
     
     countPerFrame = 0;
     super.update();
   }
   
+  public float getFrequency() {
+    return frequency;
+  }
+  
+  public String getName() {
+    return name;
+  }
+  
+  public int getCount() {
+    return count;
+  }
+  
   public void resetFrequency() {
-    maxFrequency = 0;
+    maxTagFrequency = 0;
   }
 }
 

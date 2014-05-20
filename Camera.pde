@@ -29,6 +29,10 @@ public class Camera {
     return zoom;
   }
   
+  public PVector getRot() {
+    return rot;
+  }
+  
   void mouseDragged() {
     if (gui.isMouseOver() && cp5Click == true)
       return;

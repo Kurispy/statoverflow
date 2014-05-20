@@ -2,21 +2,38 @@ import java.io.FileReader;
 
 Table userData;
 CSVReader reader;
-
+int detailLevel = 10;
+int decay = 2;
 int viewCountThreshold = 0;
+int maxUpVotes = 0;
+int maxReputation = 0;
 HashMap<Integer, User> userSpheres = new HashMap<Integer, User>();
 HashMap<String, Tag> tagSpheres = new HashMap<String, Tag>();
-int maxUpVotes = 0;
-int minUpVotes = 0;
 String [] nextLine;
 PFont ringLabelFont;
 boolean showRingLabels = false;
 boolean graphMode = false;
+String xLabel = "User Amount";
+String yLabel = "User Frequency";
+float [] coordinates;
+// graph = 0, Orbital mode
+// graph = 1, 2D Graph mode
+// y axis frequency
+// x axis amount
+float graph = 0;
+float maxTagFrequency = 0;
+float maxUserFrequency = 0;
+float yMin = 0;
+float yMax = 0;
+// False = tag
+// True = user
+boolean isUser = true;
 
-// These need to be instantiated in order
 Timekeeper timekeeper;
+Timekeeper userTimekeeper;
 Camera camera;
 GUI gui;
+PFont label = createFont("Helvetica", 80);
 
 void setup() {
   size(displayWidth, displayHeight, P3D);
@@ -29,7 +46,7 @@ void setup() {
     timekeeper = new Timekeeper(nextLine[3]);
     timekeeper.setCurrentPostTime(nextLine[3]);
     reader.close();
-    
+
     reader = new CSVReader(new FileReader(dataPath("posts.csv")), CSVParser.DEFAULT_SEPARATOR, CSVParser.DEFAULT_QUOTE_CHARACTER, '\0');
     reader.readNext(); // Get rid of header
   }
@@ -40,19 +57,18 @@ void setup() {
   
   camera = new Camera();
   gui = new GUI(this);
-  ringLabelFont = createFont("Arial", 1000);
 }
 
 void draw() {
   try {
 
     String [] tags;
-    
+
     timekeeper.advance();
     gui.setDate(timekeeper.getSimulationTime().toString());
 
     // Get the next line of the CSV
-    while (!timekeeper.hasAdvanced()) {
+    while (!timekeeper.hasAdvanced ()) {
       if (nextLine == null) {
         System.out.println("NULL");
       }
@@ -66,7 +82,7 @@ void draw() {
       tags = splitTokens(nextLine[13], "<>");
       for (String tag : tags) {
         Tag tagSphere = tagSpheres.get(tag);
-        if(tagSphere == null)
+        if (tagSphere == null)
           tagSpheres.put(tag, new Tag(tag, 1));
         else
           tagSphere.increment();
@@ -74,29 +90,38 @@ void draw() {
 
       // Who asked the question?
       TableRow row = userData.findRow(str(parseInt(nextLine[7])+1000000), "Id");
+
+      // Parse through users.csv
       if (row != null) {
-        userSpheres.put(row.getInt("Id"), new User(row.getInt("Id"), row.getInt("Reputation"), row.getInt("UpVotes"), row.getInt("DownVotes")));
+        User userSphere = userSpheres.get(row.getInt("Id"));
+        if (userSphere == null) {
+          userTimekeeper = new Timekeeper(row.getString("CreationDate"));
+          userTimekeeper.setCurrentPostTime(row.getString("CreationDate"));
+          Calendar cal = Calendar.getInstance();
+          cal.setTime(userTimekeeper.getPostTime());
+          userSpheres.put(row.getInt("Id"), new User(row.getInt("Id"), row.getInt("Reputation"), row.getInt("UpVotes"), row.getInt("DownVotes"), cal, 1));
+        } else {
+          userSphere.increment();
+        }
       }
-      
+
       nextLine = reader.readNext();
       timekeeper.setCurrentPostTime(nextLine[3]);
     }
-    
+
     updateColors();
-    
+
     // Draw pretty things
     background(0);
 
     // Draw rings
-    stroke(127);
-    noFill();
     pushMatrix();
     rotateX(HALF_PI);
-    for(int i = 1; i <= 6; i++) {
+    noFill();
+    stroke(127);
+    for (int i = 1; i <= 4; i++) {
       strokeWeight(1 / camera.getZoom());
-      int size = (int) pow(10, i);
-      
-      ellipse(0, 0, size, size);
+      ellipse(0, 0, pow(10, i), pow(10, i));
     }
     popMatrix();
     
@@ -123,28 +148,60 @@ void draw() {
       popMatrix();
     }
 
-
-    // Draw tags
-    maxFrequency = 0;
-    for (Tag tag: tagSpheres.values()) {
-      tag.update();
-      if(graphMode)
-        tag.graphRender();
-      else
-        tag.render();
-    }
-
-    // Draw users
+    // 2D Graph Mode
+    // Draw the Y Axis
+    stroke(255, 100);
     pushMatrix();
-    translate(0, -300, 0);
-    for (User user: userSpheres.values())
-    {
-      user.update();
-      user.render();
-    }
+    rotateZ(-PI/2);
+    line(0, 0, 1000 * graph, 0);
+
+    // Draw Y Axis max/min`
+    pushMatrix();
+    fill(255, 100 * graph);
+    rotateZ(PI/2);
+    textFont(label);
+    textSize(24);
+//    text(round(yMin), -textWidth(str(yMin)), -10);
+    text(round(yMax), -textWidth(str(yMax)), -1000);
     popMatrix();
 
-    
+    // Draw Y Axis Label
+    fill(255, graph * 255);
+    text(yLabel, 250 * graph, -10);
+
+    popMatrix();
+
+    // Draw the X Axis if we are not graph
+    pushMatrix();
+    line(0, 0, 5000 * graph, 0);
+
+    // Draw X Axis Label
+    fill(255, graph * 255);
+    text(xLabel, 200 * graph, 25);
+
+    // Draw X Axis min/max
+    fill(255, 100 * graph);
+    text("Max", 5000 * graph, 25);
+
+    popMatrix();
+
+    if (isUser) {
+      // Draw users
+      pushMatrix();
+      for (User user: userSpheres.values()) {
+        user.update();
+        user.render(user.getFrequency());
+      }
+      popMatrix();
+    } 
+    else {
+      // Draw tags
+      for (Tag tag: tagSpheres.values()) {
+        tag.update();
+        tag.render(tag.getFrequency());
+      }
+    }
+
     gui.drawGUI();
     camera.drawCamera();
   }
@@ -154,38 +211,89 @@ void draw() {
 }
 
 void updateColors() {
-  // Find the max and min of upvotes
-  for (User user: userSpheres.values()) {
-    maxUpVotes = max(user.getUpVotes(), maxUpVotes);
-    minUpVotes = min(user.getUpVotes(), minUpVotes);
-  }
-
-  // Change color based on mapping of upvotes
   colorMode(HSB);
   for (User user: userSpheres.values()) {
+    // Find the max and min of upvotes
+    maxUpVotes = max(user.getUpVotes(), maxUpVotes);
+    maxReputation = max(user.getReputation(), maxReputation);
+    
+    // Change color based on mapping of upvotes
     if (user.getUpVotes() > 0) {
-      float c = map(sqrt(user.getUpVotes()), sqrt(minUpVotes), sqrt(maxUpVotes), 250, 0);
+      float c = map(user.getReputation(), 0, maxReputation, 100, 250);
+      float d = map(user.getReputation(), 0, maxReputation, 255, 75);
+      float e = map(user.getReputation(), 0, maxReputation, 255, 125);
       user.setColor(color(c, 255, 255));
     } 
-    else {
+    else
       user.setColor(color(200, 255, 255));
-    }
   }
   colorMode(RGB);
 }
 
+
 void mousePressed() {
   camera.mousePressed();
-  
+
   // Show user information if selected on
   color c = get(mouseX, mouseY);
-  for (User user: userSpheres.values()) {
-    if (user.getColor() == c) {
-      gui.setUserInfo("User Id: " + user.getId() + "\n" +
-        "Upvotes: " + user.getUpVotes() + "\n" +
-        "Downvotes: " + user.getDownVotes() + "\n" +
-        "Reputation: " + user.getReputation());
+  if(isUser) {
+    for (User user: userSpheres.values()) {
+      if (user.getColor() == c) {
+        Calendar ca = user.getCreationDate();
+        gui.setUserInfo("User Id: " + user.getId() + "\n" +
+                        "Upvotes: " + user.getUpVotes() + "\n" +
+                        "Downvotes: " + user.getDownVotes() + "\n" +
+                        "Reputation: " + user.getReputation() + "\n" +
+                        "Creation Date: " + ca.get(Calendar.MONTH) + "/" + ca.get(Calendar.DAY_OF_MONTH) + "/" + ca.get(Calendar.YEAR));
+        break;
+      }
     }
+  } else {
+    for (Tag tag: tagSpheres.values()) {
+      if(tag.getColor() == c){
+        gui.setUserInfo("Tag Name: #" + tag.getName() + "\n" +
+                        "Count: " + tag.getCount());
+        break;
+      }
+    }
+  }
+}
+
+void sortByFrequency() {
+  yLabel = "Frequency";
+  toggleGraph(1);
+  if(isUser) 
+    yMax = maxUserFrequency;
+  else
+    yMax = maxTagFrequency;
+}
+
+void undoSort() {
+  toggleGraph(0);
+}
+
+void toggleGraph(float x) {
+  graph = x;
+}
+
+void keyPressed() {
+  if (key == ' ') {
+    isUser = !isUser;
+    if(isUser) {
+      xLabel = "User Amount";
+      yLabel = "User Frequency";
+    } else  {
+      xLabel = "Tag Amount";
+      yLabel = "Tag Frequency";
+    }
+  }  
+
+  if (key == '1') {
+    graphMode = !graphMode;
+    sortByFrequency();
+  } 
+  else if (key == '2') {
+    undoSort();
   }
 }
 
@@ -195,10 +303,4 @@ void mouseDragged() {
 
 void mouseWheel(MouseEvent event) {
   camera.mouseWheel(event);
-}
-
-void keyPressed() {
-  if(key == '1') {
-    graphMode = !graphMode;
-  }
 }
