@@ -13,6 +13,8 @@ public class Camera {
       zoom += (targetZoom - zoom) * zoomEase;
     else
       zoom = targetZoom;
+      
+      
     
     beginCamera();
     camera();
@@ -26,7 +28,6 @@ public class Camera {
   public float getZoom() {
     return zoom;
   }
-  
   
   void mouseDragged() {
     if (gui.isMouseOver() && cp5Click == true)

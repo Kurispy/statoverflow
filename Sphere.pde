@@ -5,8 +5,24 @@ public abstract class Sphere {
   float rho, trho;
   float phi, tphi;
   float h, th;
-  float vPhi, tvPhi;
+  float vPhi, tvPhi, gPhi;
   float aPhi, taPhi;
+  
+  public void graphRender() {
+    if(radius <= 0)
+      return;
+    
+    float x = rho;
+    float y = h;
+    float z = 0;
+    pushMatrix();
+    translate(x,y,z);
+    camera.rotateToCamera();
+    fill(col);
+    noStroke();
+    ellipse(0,0,radius * 2,radius * 2);
+    popMatrix();   
+  }
   
   public void render() {
     if(radius <= 0)

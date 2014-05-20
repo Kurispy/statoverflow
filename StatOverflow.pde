@@ -11,6 +11,7 @@ int minUpVotes = 0;
 String [] nextLine;
 PFont ringLabelFont;
 boolean showRingLabels = false;
+boolean graphMode = false;
 
 // These need to be instantiated in order
 Timekeeper timekeeper;
@@ -19,10 +20,6 @@ GUI gui;
 
 void setup() {
   size(displayWidth, displayHeight, P3D);
-  
-  
-  
-  
   
   // Data loading
   try {
@@ -107,9 +104,16 @@ void draw() {
     if(showRingLabels) {
       noStroke();
       fill(255);
-      textAlign(CENTER, BASELINE);
+      
       pushMatrix();
-      rotateX(HALF_PI);
+      if(graphMode) {
+        textAlign(LEFT, BASELINE);
+        rotateZ(HALF_PI);
+      }
+      else {
+        textAlign(CENTER, BASELINE);
+        rotateX(HALF_PI);
+      }
       textFont(ringLabelFont);
       for(int i = 1; i <= 6; i++) {
         int size = (int) pow(10, i);
@@ -124,8 +128,10 @@ void draw() {
     maxFrequency = 0;
     for (Tag tag: tagSpheres.values()) {
       tag.update();
-      tag.render();
-      
+      if(graphMode)
+        tag.graphRender();
+      else
+        tag.render();
     }
 
     // Draw users
@@ -189,4 +195,10 @@ void mouseDragged() {
 
 void mouseWheel(MouseEvent event) {
   camera.mouseWheel(event);
+}
+
+void keyPressed() {
+  if(key == '1') {
+    graphMode = !graphMode;
+  }
 }
