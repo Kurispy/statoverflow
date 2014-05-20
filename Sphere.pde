@@ -22,12 +22,32 @@ public abstract class Sphere {
     if(radius <= 0)
       return;
       
-    x = map(sin(phi) * rho * (1 - graph) + rho * graph, 0, 500, 0, 1000);
-    if(isUser)
-      y = -1 * map(frequency * graph, 0, maxUserFrequency, 0, 500); // TODO: change value; currently creates 3 streams and stacks data on top of eachother
-    else
-      y = -1 * map(frequency * graph, 0, maxTagFrequency, 0, 500); // TODO: change value; currently creates 3 streams and stacks data on top of eachother
-    z = cos(phi) * rho * (1-graph);
+    if(isUser) {
+      x = map(sin(phi) * rho * (1 - graph) + rho * graph, 0, 100, 0, 1000);
+      y = -1 * map(frequency * graph, 0, maxUserFrequency, 0, 1000); // TODO: change value; currently creates 3 streams and stacks data on top of eachother
+      z = map(cos(phi) * rho * (1-graph), 0, 100, 0, 1000);
+      
+      colorMode(HSB);
+      // Change color based on mapping of upvotes
+      float c = map(frequency, 0, maxUserFrequency, 100, 250);
+      float d = map(frequency, 0, maxUserFrequency, 255, 75);
+      float e = map(frequency, 0, maxUserFrequency, 255, 125);
+      col = color(c, 255, 255);
+      colorMode(RGB);
+    }
+    else {
+      x = map(sin(phi) * rho * (1 - graph) + rho * graph, 0, 500, 0, 1000);
+      y = -1 * map(frequency * graph, 0, maxTagFrequency, 0, 1000); // TODO: change value; currently creates 3 streams and stacks data on top of eachother
+      z = map(cos(phi) * rho * (1-graph), 0, 500, 0, 1000);
+      colorMode(HSB);
+      // Change color based on mapping of upvotes
+      float c = map(frequency, 0, maxTagFrequency, 100, 250);
+      float d = map(frequency, 0, maxTagFrequency, 255, 75);
+      float e = map(frequency, 0, maxTagFrequency, 255, 125);
+      col = color(c, 255, 255);
+      colorMode(RGB);
+    }
+    
     pushMatrix();
     translate(x,y,z);
     camera.rotateToCamera();
@@ -39,29 +59,21 @@ public abstract class Sphere {
   
   public void update() {
     if (abs(tradius - radius) > .001)
-      radius += (tradius - radius) * ease;
+      radius += (tradius - radius) * ease * timekeeper.getTimescale();
     else
       radius = tradius;
       
     if (abs(trho - rho) > .001)
-      rho += (trho - rho) * ease;
+      rho += (trho - rho) * ease * timekeeper.getTimescale();
     else
       rho = trho;
       
     if (abs(tvPhi - vPhi) > .001)
-      vPhi += (tvPhi - vPhi) * ease;
+      vPhi += (tvPhi - vPhi) * ease * timekeeper.getTimescale();
     else
       vPhi = tvPhi;
-      
-    if(!isUser) {
-      if (abs(tcol - col) > 1)
-        col = lerpColor(col, tcol, .01);
-      else
-        col = tcol;
-    }
     
-    //vPhi = max(vPhi + (aPhi / exp(radius)) - 0.0001 * exp(radius), 0);
-    phi += vPhi;
+    phi += vPhi * timekeeper.getTimescale();
   }
     
   public color getColor() { 

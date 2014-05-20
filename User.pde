@@ -1,3 +1,5 @@
+float userDecay = 1.0;
+
 public class User extends Sphere {
   
   int id;
@@ -31,14 +33,16 @@ public class User extends Sphere {
   }
   
   public void update() {
-    tradius = max(tradius + ((countPerFrame > 1 ? log(countPerFrame) : 0) - 0.0001), 0); // should figure out a better scale for this
+    tradius = max(tradius + ((countPerFrame > 1 ? log(countPerFrame) : 0) - 0.001 * userDecay), 0); // should figure out a better scale for this
     trho = count;
     
     frequency = ((float) count) / ((float) frameCount);
     if(frequency > maxUserFrequency)
       maxUserFrequency = frequency;
     tvPhi = 0.05 * sqrt(frequency);
-    col = lerpColor(#389435, #368da9, map(frequency, 0, maxUserFrequency, 0, 1));
+    colorMode(HSB);
+    col = lerpColor(#00FFFF, #FFFFFF, map(frequency, 0, maxUserFrequency, 0, 1));
+    colorMode(RGB);
     
     countPerFrame = 0;
     super.update();

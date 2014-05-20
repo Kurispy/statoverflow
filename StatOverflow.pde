@@ -10,7 +10,6 @@ int maxReputation = 0;
 HashMap<Integer, User> userSpheres = new HashMap<Integer, User>();
 HashMap<String, Tag> tagSpheres = new HashMap<String, Tag>();
 String [] nextLine;
-PFont ringLabelFont;
 boolean showRingLabels = false;
 boolean graphMode = false;
 String xLabel = "User Amount";
@@ -28,12 +27,14 @@ float yMax = 0;
 // False = tag
 // True = user
 boolean isUser = true;
+boolean sorted = false;
 
 Timekeeper timekeeper;
 Timekeeper userTimekeeper;
 Camera camera;
 GUI gui;
 PFont label = createFont("Helvetica", 80);
+PFont ringLabelFont = createFont("Arial", 1000);
 
 void setup() {
   size(displayWidth, displayHeight, P3D);
@@ -115,13 +116,15 @@ void draw() {
     background(0);
 
     // Draw rings
+    stroke(127);
+    noFill();
     pushMatrix();
     rotateX(HALF_PI);
-    noFill();
-    stroke(127);
-    for (int i = 1; i <= 4; i++) {
+    for(int i = 1; i <= 6; i++) {
       strokeWeight(1 / camera.getZoom());
-      ellipse(0, 0, pow(10, i), pow(10, i));
+      int size = (int) pow(10, i);
+      
+      ellipse(0, 0, size, size);
     }
     popMatrix();
     
@@ -149,41 +152,42 @@ void draw() {
     }
 
     // 2D Graph Mode
-    // Draw the Y Axis
-    stroke(255, 100);
-    pushMatrix();
-    rotateZ(-PI/2);
-    line(0, 0, 1000 * graph, 0);
-
-    // Draw Y Axis max/min`
-    pushMatrix();
-    fill(255, 100 * graph);
-    rotateZ(PI/2);
-    textFont(label);
-    textSize(24);
-//    text(round(yMin), -textWidth(str(yMin)), -10);
-    text(round(yMax), -textWidth(str(yMax)), -1000);
-    popMatrix();
-
-    // Draw Y Axis Label
-    fill(255, graph * 255);
-    text(yLabel, 250 * graph, -10);
-
-    popMatrix();
-
-    // Draw the X Axis if we are not graph
-    pushMatrix();
-    line(0, 0, 5000 * graph, 0);
-
-    // Draw X Axis Label
-    fill(255, graph * 255);
-    text(xLabel, 200 * graph, 25);
-
-    // Draw X Axis min/max
-    fill(255, 100 * graph);
-    text("Max", 5000 * graph, 25);
-
-    popMatrix();
+    if(graphMode) {
+      // Draw the Y Axis
+      stroke(255, 100);
+      pushMatrix();
+      rotateZ(-PI/2);
+      line(0, 0, 1000 * graph, 0);
+  
+      // Draw Y Axis max/min`
+      pushMatrix();
+      fill(255, 100 * graph);
+      rotateZ(PI/2);
+      textFont(label);
+      textSize(24);
+      text(round(yMax), -textWidth(str(yMax)), -1000);
+      popMatrix();
+  
+      // Draw Y Axis Label
+      fill(255, graph * 255);
+      text(yLabel, 250 * graph, -10);
+  
+      popMatrix();
+  
+      // Draw the X Axis if we are not graph
+      pushMatrix();
+      line(0, 0, 5000 * graph, 0);
+  
+      // Draw X Axis Label
+      fill(255, graph * 255);
+      text(xLabel, 200 * graph, 25);
+  
+      // Draw X Axis min/max
+      fill(255, 100 * graph);
+      text("Max", 5000 * graph, 25);
+  
+      popMatrix();
+    }
 
     if (isUser) {
       // Draw users
@@ -290,10 +294,12 @@ void keyPressed() {
 
   if (key == '1') {
     graphMode = !graphMode;
-    sortByFrequency();
-  } 
-  else if (key == '2') {
-    undoSort();
+    if(!sorted) 
+      sortByFrequency();
+    else
+      undoSort();
+      
+    sorted = !sorted;
   }
 }
 
