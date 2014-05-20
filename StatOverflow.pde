@@ -2,15 +2,17 @@ import java.io.FileReader;
 
 Table userData;
 CSVReader reader;
-int detailLevel = 10;
-int decay = 2;
+
 int viewCountThreshold = 0;
 HashMap<Integer, User> userSpheres = new HashMap<Integer, User>();
 HashMap<String, Tag> tagSpheres = new HashMap<String, Tag>();
 int maxUpVotes = 0;
 int minUpVotes = 0;
 String [] nextLine;
+PFont ringLabelFont;
+boolean showRingLabels = false;
 
+// These need to be instantiated in order
 Timekeeper timekeeper;
 Camera camera;
 GUI gui;
@@ -19,8 +21,8 @@ void setup() {
   size(displayWidth, displayHeight, P3D);
   
   
-  camera = new Camera();
-  gui = new GUI(this);
+  
+  
   
   // Data loading
   try {
@@ -38,6 +40,10 @@ void setup() {
     System.err.println(e);
   }
   userData = loadTable("users.csv", "header");
+  
+  camera = new Camera();
+  gui = new GUI(this);
+  ringLabelFont = createFont("Arial", 1000);
 }
 
 void draw() {
@@ -68,16 +74,6 @@ void draw() {
         else
           tagSphere.increment();
       }
-      
-      // Remove any tags that haven't been used for a while
-//      if (pDate.get(Calendar.DAY_OF_MONTH) != cSimDate.get(Calendar.DAY_OF_MONTH)) {
-//        for (String tag : tagCount.keys()) {
-//          tagCount.sub(tag, decay);
-//          if (tagCount.get(tag) <= 0)
-//            tagCount.remove(tag);
-//        }
-//        pDate.setTime(cSimDate.getTime());
-//      }
 
       // Who asked the question?
       TableRow row = userData.findRow(str(parseInt(nextLine[7])+1000000), "Id");
@@ -95,15 +91,33 @@ void draw() {
     background(0);
 
     // Draw rings
+    stroke(127);
+    noFill();
     pushMatrix();
     rotateX(HALF_PI);
-    noFill();
-    stroke(127);
-    for(int i = 1; i <= 4; i++) {
+    for(int i = 1; i <= 6; i++) {
       strokeWeight(1 / camera.getZoom());
-      ellipse(0, 0, pow(10, i), pow(10, i));
+      int size = (int) pow(10, i);
+      
+      ellipse(0, 0, size, size);
     }
     popMatrix();
+    
+    // Draw ring labels
+    if(showRingLabels) {
+      noStroke();
+      fill(255);
+      textAlign(CENTER, BASELINE);
+      pushMatrix();
+      rotateX(HALF_PI);
+      textFont(ringLabelFont);
+      for(int i = 1; i <= 6; i++) {
+        int size = (int) pow(10, i);
+        textSize(size / 4);
+        text(size, 0, -size / 2 - size / 100);
+      }
+      popMatrix();
+    }
 
 
     // Draw tags

@@ -10,9 +10,9 @@ public class User extends Sphere {
     reputation = userReputation;
     upVotes = userUpVotes;
     downVotes = userDownVotes;
-    rho = upVotes;
+    trho = upVotes;
     phi = random(TWO_PI);
-    vPhi = (TWO_PI)/userReputation;
+    tvPhi = (TWO_PI)/userReputation;
     tradius = sqrt(reputation) / 2;
   }
   

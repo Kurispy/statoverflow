@@ -19,25 +19,51 @@ public class GUI implements ControlListener {
       .close()
       ;
       
-    cp5.addSlider("detailLevel")
+    cp5.addSlider("timescale")
       .setSize(20, 200)
-      .setRange(3, 30)
-      .setNumberOfTickMarks(28)
-      .showTickMarks(false)
-      .setCaptionLabel("Detail Level")
+      .setPosition(40, 20)
+      .setRange(0, 4)
       .setGroup(rightMenu)
+      .plugTo(timekeeper)
+      .setValue(1.0)
+      .getCaptionLabel()
+      .align(ControlP5.CENTER, ControlP5.BOTTOM_OUTSIDE)
       ;
       
-    cp5.addSlider("decay")
+    cp5.addSlider("simSecondsPerFrame")
       .setSize(20, 200)
-      .setRange(0, 10)
-      .setNumberOfTickMarks(11)
+      .setPosition(140, 20)
+      .setRange(0, 3600)
       .setGroup(rightMenu)
+      .plugTo(timekeeper)
+      .setValue(1000)
+      .setCaptionLabel("SSPF")
+      .getCaptionLabel()
+      .align(ControlP5.CENTER, ControlP5.BOTTOM_OUTSIDE)
+      ;
+      
+    cp5.addSlider("tagDecay")
+      .setSize(20, 200)
+      .setPosition(40, 240)
+      .setRange(0, 4)
+      .setCaptionLabel("Tag Decay")
+      .setGroup(rightMenu)
+      .getCaptionLabel()
+      .align(ControlP5.CENTER, ControlP5.BOTTOM_OUTSIDE)
       ;
       
     cp5.addButton("Show FPS")
       .setSize(20, 20)
-      .setPosition(10, 300)
+      .setPosition(140, 550)
+      .setGroup(rightMenu)
+      .setSwitch(true)
+      .getCaptionLabel()
+      .align(ControlP5.CENTER, ControlP5.BOTTOM_OUTSIDE)
+      ;
+      
+    cp5.addButton("Show Ring Labels")
+      .setSize(20, 20)
+      .setPosition(40, 550)
       .setGroup(rightMenu)
       .setSwitch(true)
       .getCaptionLabel()
@@ -45,7 +71,7 @@ public class GUI implements ControlListener {
       ;
       
     cp5.addNumberbox("viewCountThreshold") // This should be converted to a range slider
-      .setPosition(100, 300)
+      .setPosition(55, 500)
       .setSize(90, 20)
       .setRange(0, Integer.MAX_VALUE)
       .setGroup(rightMenu)
@@ -81,6 +107,10 @@ public class GUI implements ControlListener {
         fps.show();
       else
         fps.hide();
+    }
+    
+    if (theEvent.getController() == cp5.getController("Show Ring Labels")) {
+      showRingLabels = !showRingLabels;
     }
   }
   

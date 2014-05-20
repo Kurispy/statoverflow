@@ -9,8 +9,9 @@ public class Timekeeper {
   Calendar postDate = new GregorianCalendar();
   Calendar pDate = new GregorianCalendar();
   Calendar startTime = new GregorianCalendar();
-  String cDate;
-  long simSecondsPerFrame = 1000; // simulated seconds per frame
+  int simSecondsPerFrame = 1000; // simulated seconds per frame
+  float timescale = 1.0;
+  
   
   Timekeeper(String startDate) {
     try {
@@ -23,7 +24,7 @@ public class Timekeeper {
   }
   
   public void advance() {
-    cSimDate.setTimeInMillis(cSimDate.getTimeInMillis() + 1000 * simSecondsPerFrame);
+    cSimDate.setTimeInMillis((long) (cSimDate.getTimeInMillis() + 1000 * simSecondsPerFrame * timescale));
   }
   
   public long getMillisPerFrame() {
@@ -36,6 +37,10 @@ public class Timekeeper {
   
   public Date getSimulationTime() {
     return cSimDate.getTime();
+  }
+  
+  public float getTimescale() {
+    return timescale;
   }
   
   public long getTimeSinceStart() {

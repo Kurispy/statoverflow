@@ -26,26 +26,25 @@ public abstract class Sphere {
   
   public void update() {
     if (abs(tradius - radius) > .001)
-      radius += (tradius - radius) * ease;
+      radius += (tradius - radius) * ease * timekeeper.getTimescale();
     else
       radius = tradius;
       
     if (abs(trho - rho) > .001)
-      rho += (trho - rho) * ease;
+      rho += (trho - rho) * ease * timekeeper.getTimescale();
     else
       rho = trho;
       
     if (abs(tvPhi - vPhi) > .001)
-      vPhi += (tvPhi - vPhi) * ease;
+      vPhi += (tvPhi - vPhi) * ease * timekeeper.getTimescale();
     else
       vPhi = tvPhi;
       
-    if (abs(tcol - col) > 1)
-      col = lerpColor(col, tcol, .01);
-    else
-      col = tcol;
+//    if (abs(tcol - col) > 1)
+//      col = lerpColor(col, tcol, .01 * timekeeper.getTimescale());
+//    else
+//      col = tcol;
     
-    //vPhi = max(vPhi + (aPhi / exp(radius)) - 0.0001 * exp(radius), 0);
-    phi += vPhi;
+    phi += vPhi * timekeeper.getTimescale();
   }
 }
